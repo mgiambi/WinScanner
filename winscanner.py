@@ -5,9 +5,20 @@ import argparse
 import urllib3
 import xml.dom.minidom
 import re
+import json
 import wmi_client_wrapper as wmi
 from hurry.filesize import size, si
 from winrm.protocol import Protocol
+
+
+#####################
+### OUTPUT OBJECT ###
+#####################
+
+class Object:
+	def toJSON(self):
+		return json.dumps(self, default=lambda o: o.__dict__,\
+            		sort_keys=True, indent=4)
 
 
 #################
@@ -169,6 +180,11 @@ def get_info(session, wmic, print_error):
 			 "FROM Win32_NetworkAdapterConfiguration")
 	print(mac)
 
+	# COMMUNICATION PROTOCOL TYPE
+	proto = wmic.query("SELECT Name " +\
+			   "FROM Win32_NetworkProtocol")
+	print(proto)
+
 	# USERS
 	users = wmic.query("SELECT Name " +\
 			   "FROM Win32_UserAccount")
@@ -322,12 +338,12 @@ def get_info(session, wmic, print_error):
 	print(backup)
 
 	# BACKUP FILES (ADMIN ONLY)
-	backup_enabled = ""
+	backup_location = ""
 	if backup:
-		backup_enabled = re.search("store backup: (.*)" +\
+		backup_location = re.search("store backup: (.*)" +\
 				"\n", result.std_out.decode())\
 				.group(1)
-	print(backup_enabled)
+	print(backup_location)
 ## End info gathering function
 
 

@@ -1,0 +1,46 @@
+output
+	systemName	:	(required, string)
+	installDate	:	(required, date)
+	lastUpdate	:	(date)
+	hwModel		:	(required, string)
+	hwVendor	:	(required, string)
+	serialID	:	(required, string)
+	osVersion	:	(required, string)
+	swInstalled	:	(required, list[string])
+	firewall	:	(required, list[profile])
+		profile		:	(required, (string, bool))
+	
+	osUpdates	:	(list[string])
+	swUpdates	:	(required, list[string])
+	ipAddr		:	(required, list[string])
+	defaultGW	:	(required, list[string])
+	domain		:	(required, string)
+	remoteAccess	:	(list[string])
+	macAddr		:	(required, list[string])
+	protocols	:	(required, list[string])
+	portNumber	:	(required, list[port])
+		port		:	(required, (string, int))
+	
+	active_proc	:	(required, list[process])
+		process		:	(required, (int, string))
+
+	users		:	(required, list[string])
+	groups		:	(required, list[string])
+	shared		:	(required, list[string])
+	secLog		:	(bool)
+	restore		:	(bool)
+	backup		:	(bool)
+	backup_path	:	(string)
+	conn_service	:
+	conn_interfaces	:
+	conn_speed	:
+
+	# MOBILE CONNECTIVITY FIELDS
+
+	cpu		:	(required, list[string])
+	ram		:	(required, int)
+	hard_drives	:	(required, list[disk])
+		disk		:	(required, (string, int))
+
+	
+	
