@@ -76,7 +76,7 @@ def run_script(session, script, shell, print_error):
 				print("\n" + result.std_err)
 			else:
 				dom = xml.dom.minidom.parseString(\
-				result.std_err\
+				result.std_err.decode()\
 					.split("\n", 1)[1])
 				print("\n" + dom.toprettyxml())
 
@@ -144,12 +144,10 @@ def get_info(session, wmic, print_error):
 
 	# ANTIVIRUS VERSION
 
-	# OS PATCHES INSTALLED
-	os_patches = wmic.query("SELECT * " +\
+	# LAST UPDATE DATE & OS PATCHES INSTALLED
+	os_patches = wmic.query("SELECT HotFixID, InstalledOn " +\
 				"FROM Win32_QuickFixEngineering")
 	print(os_patches)
-
-	# APPLICATION PATCHES INSTALLED
 
 	# IP ADDRESS AND SUBNET MASK
 	ip_addr = wmic.query("SELECT Caption, IPAddress, IPSubnet " +\
@@ -220,15 +218,6 @@ def get_info(session, wmic, print_error):
 	## CMD COMMAND EXECUTION
 	##
 
-	# LAST UPDATE DATE (ADMIN ONLY)
-	result = session.run_cmd("wmic qfe list brief")
-	display_err(result.std_err.decode(), print_error,\
-			"check os update")
-	wmic_qfe_res = re.sub("[^\(\/0-9)]", " ",\
-			result.std_out.decode()).split()
-	os_update_date = wmic_qfe_res[1::2]
-	print(os_update_date)
-
 	# SW INSTALLED
 	result = session.run_cmd(\
 			"reg query HKLM\Software\Microsoft\Windows" +\
@@ -257,7 +246,7 @@ def get_info(session, wmic, print_error):
 	display_err(result.std_err.decode(), print_error, "sw")
 	print(result.std_out.decode())
 
-	# APPLICATION PATCH INSTALLED
+	# APPLICATION PATCHES INSTALLED
 	result = session.run_cmd(\
 			"reg query HKLM\Software\WoW6432Node" +\
 			r"\Microsoft\Updates\ /s")
