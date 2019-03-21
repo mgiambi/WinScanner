@@ -16,7 +16,7 @@ from winrm.protocol import Protocol
 #####################
 
 class Object:
-	def toJSON(self):
+	def to_json(self):
 		return json.dumps(self, default=lambda o: o.__dict__,\
             		sort_keys=True, indent=4)
 
@@ -110,7 +110,7 @@ def run_file(session, path, print_error):
 ### End file function
 
 ### Gather assorted info about target system
-def get_info(session, wmic, print_error):
+def get_info(session, wmic, print_error, output):
 
 	##
 	## WMI QUERIES
@@ -119,37 +119,37 @@ def get_info(session, wmic, print_error):
 	# SYSTEM NAME
 	system_name = wmic.query("SELECT Name " +\
 				 "FROM Win32_ComputerSystem")
-	print(system_name)
+	output.systemName = system_name[0]["Name"]
 
 	# INSTALLATION DATE
 	install_date = wmic.query("SELECT InstallDate " +\
 				  "FROM Win32_OperatingSystem")
-	print(install_date)
+	output.installDate = install_date[0]["InstallDate"]
 
 	# HARDWARE MODEL
 	hw_model = wmic.query("SELECT Model " +\
 			      "FROM Win32_ComputerSystem")
-	print(hw_model)
+	output.hwModel = hw_model[0]["Model"]
 
 	# HARDWARE VENDOR
 	hw_vendor = wmic.query("SELECT Manufacturer " +\
 			       "FROM Win32_ComputerSystem")
-	print(hw_vendor)
+	output.hwVendor = hw_vendor[0]["Manufacturer"]
 
 	# SERIAL NUMBER
 	serial_id = wmic.query("SELECT SerialNumber " +\
 			       "FROM Win32_OperatingSystem")
-	print(serial_id)
+	output.serialID = serial_id[0]["SerialNumber"]
 
 	# OS NAME
 	os_name = wmic.query("SELECT Name " +\
 			     "FROM Win32_OperatingSystem")
-	print(os_name)
+	output.osName = os_name[0]["Name"]
 
 	# OS VERSION
 	os_version = wmic.query("SELECT Version " +\
 				"FROM Win32_OperatingSystem")
-	print(os_version)
+	output.osVersion = os_version[0]["Version"]
 
 	# ANTIVIRUS NAME
 
@@ -158,62 +158,86 @@ def get_info(session, wmic, print_error):
 	# LAST UPDATE DATE & OS PATCHES INSTALLED
 	os_patches = wmic.query("SELECT HotFixID, InstalledOn " +\
 				"FROM Win32_QuickFixEngineering")
-	print(os_patches)
+	osUpdates = []
+	for k in os_patches:
+		patch = Object()
+		patch.ID = k["HotFixID"]
+		patch.date = k["InstalledOn"]
+		osUpdates.append(patch)
+	output.osUpdates = osUpdates
 
-	# IP ADDRESS AND SUBNET MASK
-	ip_addr = wmic.query("SELECT Caption, IPAddress, IPSubnet " +\
-			     "FROM Win32_NetworkAdapterConfiguration")
-	print(ip_addr)
-
-	# DEFAULT GATEWAY
-	gateway = wmic.query("SELECT DefaultIPGateway " +\
-			     "FROM Win32_NetworkAdapterConfiguration")
-	print(gateway)
+	# IP ADDRESS AND SUBNET MASK & DEFAULT GATEWAY & MAC
+	# & CONNECTIVITY INTERFACE
+	ip_addr = wmic.query("SELECT Caption, IPAddress, " +\
+			     "IPSubnet, DefaultIPGateway, " +\
+			     "MACAddress, SettingID " +\
+ 			     "FROM Win32_NetworkAdapterConfiguration")
+	ipAddr = []
+	for k in ip_addr:
+		addr = Object()
+		addr.caption = k["Caption"]
+		addr.IP = k["IPAddress"][0] + "/" +\
+				k["IPSubnet"][0]
+		addr.gateway = k["DefaultIPGateway"]
+		addr.mac = k["MACAddress"]
+		addr.interfaceID = k["SettingID"]
+		ipAddr.append(addr)
+	output.ipAddr = ipAddr
 
 	# DOMAIN
 	domain = wmic.query("SELECT Domain " +\
 			    "FROM Win32_ComputerSystem")
-	print(domain)
-
-	# MAC ADDRESS
-	mac = wmic.query("SELECT MACAddress " +\
-			 "FROM Win32_NetworkAdapterConfiguration")
-	print(mac)
+	output.domain = domain[0]["Domain"]
 
 	# COMMUNICATION PROTOCOL TYPE
 	proto = wmic.query("SELECT Name " +\
 			   "FROM Win32_NetworkProtocol")
-	print(proto)
+	protocols = []
+	for k in proto:
+		protocols.append(k["Name"])
+	output.protocols = protocols
 
 	# USERS
 	users = wmic.query("SELECT Name " +\
 			   "FROM Win32_UserAccount")
-	print(users)
+	user = []
+	for k in users:
+		user.append(k["Name"])
+	output.users = user
 
 	# GROUPS
 	groups = wmic.query("SELECT Name " +\
 			    "FROM Win32_Group")
-	print(groups)
+	group = []
+	for k in groups:
+		group.append(k["Name"])
+	output.groups = group
 
 	# SHARED FOLDERS
-	shared = wmic.query("SELECT * "+\
+	shared = wmic.query("SELECT Name, Path "+\
 			    "FROM Win32_Share")
-	print(shared)
-
-	# CONECTIVITY INTERFACES
-	conn = wmic.query("SELECT SettingID " +\
-			  "FROM Win32_NetworkAdapterConfiguration")
-	print(conn)
+	folders = []
+	for k in shared:
+		folder = Object()
+		folder.Name = k["Name"]
+		folder.Path = k["Path"]
+		folders.append(folder)
+	output.shared = folders
 
 	# CPU
 	cpu = wmic.query("SELECT Name " +\
 			 "FROM Win32_Processor")
-	print(cpu)
+	processors = []
+	for k in cpu:
+		processors.append(k["Name"])
+	output.cpu = processors
 
 	# RAM
 	ram = wmic.query("SELECT TotalPhysicalMemory " +\
 			 "FROM Win32_ComputerSystem")
-	print(ram)
+	output.ram = ram[0]["TotalPhysicalMemory"]
+
+	print(output.to_json())
 
 	# HDD SIZE
 	hdd_size = wmic.query("SELECT Size " +\
@@ -396,6 +420,7 @@ session, wmic = auth(args.i[0], args.u[0], args.w[0], args.s, port)
 
 # Perform chosen tasks
 print_error = args.e
+output = Object()
 
 if args.b is not None:
 	run_script(session, args.b[0], "batch", print_error)
@@ -407,4 +432,4 @@ if args.f is not None:
 	run_file(session, args.f[0], print_error)
 
 if args.b is None and args.ps is None and args.f is None:
-	get_info(session, wmic, print_error)
+	get_info(session, wmic, print_error, output)

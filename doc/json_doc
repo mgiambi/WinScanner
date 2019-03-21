@@ -1,7 +1,6 @@
 output
 	systemName	:	(required, string)
 	installDate	:	(required, date)
-	lastUpdate	:	(date)
 	hwModel		:	(required, string)
 	hwVendor	:	(required, string)
 	serialID	:	(required, string)
@@ -10,7 +9,8 @@ output
 	firewall	:	(required, list[profile])
 		profile		:	(string, bool)
 	
-	osUpdates	:	(list[string])
+	osUpdates	:	(list[update])
+		update		:	(string, date)
 	swUpdates	:	(required, list[string])
 	ipAddr		:	(required, list[string])
 	defaultGW	:	(required, list[string])
