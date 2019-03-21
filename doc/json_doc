@@ -8,7 +8,7 @@ output
 	osVersion	:	(required, string)
 	swInstalled	:	(required, list[string])
 	firewall	:	(required, list[profile])
-		profile		:	(required, (string, bool))
+		profile		:	(string, bool)
 	
 	osUpdates	:	(list[string])
 	swUpdates	:	(required, list[string])
@@ -19,10 +19,10 @@ output
 	macAddr		:	(required, list[string])
 	protocols	:	(required, list[string])
 	portNumber	:	(required, list[port])
-		port		:	(required, (string, int))
+		port		:	(string, int)
 	
 	active_proc	:	(required, list[process])
-		process		:	(required, (int, string))
+		process		:	(int, string)
 
 	users		:	(required, list[string])
 	groups		:	(required, list[string])
@@ -31,9 +31,8 @@ output
 	restore		:	(bool)
 	backup		:	(bool)
 	backup_path	:	(string)
-	conn_service	:
-	conn_interfaces	:
-	conn_speed	:
+	connectivity	:	(required, list[interface])
+		interface	:	(string, string int)
 
 	# MOBILE CONNECTIVITY FIELDS
 
