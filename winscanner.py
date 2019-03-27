@@ -3,11 +3,9 @@ import sys
 import os
 import argparse
 import urllib3
-import xml.dom.minidom
 import re
 import json
 import wmi_client_wrapper as wmi
-from hurry.filesize import size, si
 from winrm.protocol import Protocol
 
 
@@ -44,7 +42,7 @@ def display_err(error_msg, print_error, command):
 ### Connect to the remote machine
 def auth(ip, user, password, secure, custom_port):
 
-    # Authentication to WMI query service
+        # Authentication to WMI query service
         wmic = wmi.WmiClientWrapper(\
                 username = user,\
                 password = password,\
@@ -268,7 +266,7 @@ def get_info(session, wmic, print_error, output_file):
         interface = Object()
         interface.name = k["Name"]
         interface.type = k["AdapterType"]
-        interface.speed = k["Speed"]
+        interface.rate = k["Speed"]
         conn.append(interface)
     output.connectivity = conn
 
@@ -285,7 +283,7 @@ def get_info(session, wmic, print_error, output_file):
     app_result = result.std_out.decode().split("\n")[:-1]
 
     result = session.run_cmd(\
-                "reg query HKLM\Software\WoW6432Node" +\
+                r"reg query HKLM\Software\WoW6432Node" +\
                 r"\Microsoft\Windows\CurrentVersion" +\
                 r"\Uninstall /s /v DisplayName " +\
                 r"| findstr DisplayName")
@@ -294,12 +292,13 @@ def get_info(session, wmic, print_error, output_file):
 
     app = []
     for k in app_result:
-        app.append(re.search("SZ[\s]*(.*?)\\r", k).group(1))
+        if bool(re.search("SZ[\s]*(.*?)\\r", k)):
+            app.append(re.search("SZ[\s]*(.*?)\\r", k).group(1))
 
     result = session.run_cmd(\
-                "reg query HKLM\Software\Microsoft\Windows" +\
+                r"reg query HKLM\Software\Microsoft\Windows" +\
                 r"\CurrentVersion\Uninstall /s /v " +\
-                "DisplayVersion | findstr DisplayVersion")
+                r"DisplayVersion | findstr DisplayVersion")
     display_err(result.std_err.decode(), print_error, "sw")
     ver_result = result.std_out.decode().split("\n")[:-1]
 
@@ -313,7 +312,8 @@ def get_info(session, wmic, print_error, output_file):
 
     ver = []
     for k in ver_result:
-        ver.append(re.search("SZ[\s]*(.*?)\\r", k).group(1))
+        if bool(re.search("SZ[\s]*(.*?)\\r", k)):
+            ver.append(re.search("SZ[\s]*(.*?)\\r", k).group(1))
 
     software = []
     for k in range(0, len(app)):
@@ -331,8 +331,9 @@ def get_info(session, wmic, print_error, output_file):
     patches_result = result.std_out.decode().split("\n")[:-1]
     patches = []
     for k in patches_result:
-        patches.append(re.search("Updates(.*?)\\r", k).group(1))
-    output.softwarePatches = patches
+        if bool(re.search("Updates(.*?)\\r", k)):
+            patches.append(re.search("Updates(.*?)\\r", k).group(1))
+    output.swPatches = patches
 
     # HOST FIREWALL
     result = session.run_cmd("netsh advfirewall show all state")
@@ -342,14 +343,15 @@ def get_info(session, wmic, print_error, output_file):
     profiles = []
     for k in firewall_up:
         profile = Object()
-        profile.name = re.search("(.*?)Settings: ", k).group(1)
-        profile.state = "ON"
+        if bool(re.search("(.*?)Settings: ", k)):
+            profile.name = re.search("(.*?)Settings: ", k).group(1)
+        profile.state = "OFF"
 
-        if "    OFF" in k:
-            profile.state = "OFF"
+        if "    ON" in k:
+            profile.state = "ON"
         profiles.append(profile)
 
-    output.firewallProfiles = profiles
+    output.firewall = profiles
 
     # REMOTE ACCESS TYPE
     connectivity = []
@@ -397,7 +399,7 @@ def get_info(session, wmic, print_error, output_file):
         proc.append(process)
     output.processes = proc
 
-    # SECURITY LOGGING (ADMIN ONLY)
+    # SECURITY LOGGING
     result = session.run_cmd("auditpol /get /category:system")
     display_err(result.std_err.decode(), print_error, "sec_log")
     log_res = result.std_out.decode().split("\n")[3:-1]
@@ -406,7 +408,7 @@ def get_info(session, wmic, print_error, output_file):
         policy = Object()
         s = re.split("\s{2,}", k.strip())
         policy.name = s[0]
-        policy.setting = s[1]
+        policy.settings = s[1]
         policies.append(policy)
     output.seclog = policies
 
@@ -417,12 +419,15 @@ def get_info(session, wmic, print_error, output_file):
     shadows = []
     for k in s:
         restore = Object()
-        restore.original = re.search("Original Volume: " +\
-                    "(.*?)\\r", k).group(1)
-        restore.shadow = re.search("Shadow Copy Volume: " +\
-                    "(.*?)\\r", k).group(1)
-        restore.id = re.search("Shadow Copy ID: \{" +\
-                    "(.*?)\}", k).group(1)
+        if bool(re.search("Original Volume: (.*?)\\r", k)):
+            restore.original = re.search("Original Volume: " +\
+                        "(.*?)\\r", k).group(1)
+        if bool(re.search("Shadow Copy Volume: (.*?)\\r", k)):
+            restore.shadow = re.search("Shadow Copy Volume: " +\
+                        "(.*?)\\r", k).group(1)
+        if bool(re.search("Shadow Copy ID: (.*?)\\r", k)):
+            restore.id = re.search("Shadow Copy ID: \{" +\
+                        "(.*?)\}", k).group(1)
         shadows.append(restore)
     output.shadows = shadows
 
@@ -450,10 +455,10 @@ def get_info(session, wmic, print_error, output_file):
 ### MAIN PROGRAM ###
 ####################
 
-# Import SSL certificates from local machine
+# Import SSL certificates from local machine (DEBAIN ONLY)
 urllib3.disable_warnings(urllib3.exceptions.SubjectAltNameWarning)
-os.environ['REQUESTS_CA_BUNDLE'] = os.path.join('/etc/ssl/certs/',\
-                                        'ca-certificates.crt')
+os.environ["REQUESTS_CA_BUNDLE"] = os.path.join("/etc/ssl/certs/",\
+                                        "ca-certificates.crt")
 
 # Parse input
 parser = argparse.ArgumentParser(description = "Remote diagnostics" +\
@@ -466,20 +471,20 @@ parser.add_argument("u", metavar = "username", type = str,\
 parser.add_argument("w", metavar = "password", type = str,\
         nargs = 1, help = "the password for remote "+\
         "authentication")
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-b", action = "store_true",\
+        help = "open a CMD shell on target machine")
+group.add_argument("-ps", action = "store_true",\
+        help = "open a PS shell on target machine")
+group.add_argument("-f", metavar = "script file", type = str,\
+        nargs = 1, help = "run the script in the specified file")
 parser.add_argument("-p", metavar = "port", type = str,\
         nargs = 1, help = "port to connect to " +\
         "(if different from default)")
 parser.add_argument("-o", metavar = "output file", type = str,\
-        nargs = 1, help = "path to store the output")
-parser.add_argument("-b", action = "store_true",\
-        help = "open a CMD shell on target machine")
-parser.add_argument("-ps", action = "store_true",\
-        help = "open a PS shell on target machine")
-parser.add_argument("-f", metavar = "script file", type = str,\
-        nargs = 1, help = "the path to a .bat o .ps file" +\
-        " to run on target machine")
+        nargs = 1, help = "save the output in the specified file")
 parser.add_argument("-e", action = "store_true",\
-        help = "view StdErr output")
+        help = "print StdErr output")
 parser.add_argument("-s", action = "store_true",\
         help = "use HTTPS for secure connection")
 args = parser.parse_args()
@@ -502,12 +507,9 @@ print_error = args.e
 
 if args.b:
     shell_mode(session, "CMD", print_error, output_file)
-
-if args.ps:
+elif args.ps:
     shell_mode(session, "PS", print_error, output_file)
-
-if args.f is not None:
+elif args.f is not None:
     run_file(session, args.f[0], print_error, output_file)
-
-if not args.b and not args.ps and args.f is None:
+else:
     get_info(session, wmic, print_error, output_file)

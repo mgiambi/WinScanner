@@ -4,42 +4,43 @@ output
 	hwModel		:	(required, string)
 	hwVendor	:	(required, string)
 	serialID	:	(required, string)
+    osName      :   (required, string)
 	osVersion	:	(required, string)
-	swInstalled	:	(required, list[string])
-	firewall	:	(required, list[profile])
-		profile		:	(string, bool)
-	
-	osUpdates	:	(list[update])
-		update		:	(string, date)
-	swUpdates	:	(required, list[string])
-	ipAddr		:	(required, list[string])
-	defaultGW	:	(required, list[string])
+    osUpdates   :   (required, list[(id:  string,
+                                    date: date)])
+    ipAddr      :   (required, list[(caption:     string,
+                                     ip:          string,
+                                     gateway:     string,
+                                     mac:         string,
+                                     interfaceID: string)])
 	domain		:	(required, string)
-	remoteAccess	:	(list[string])
-	macAddr		:	(required, list[string])
 	protocols	:	(required, list[string])
-	portNumber	:	(required, list[port])
-		port		:	(string, int)
-	
-	active_proc	:	(required, list[process])
-		process		:	(int, string)
-
 	users		:	(required, list[string])
 	groups		:	(required, list[string])
 	shared		:	(required, list[string])
-	secLog		:	(bool)
-	restore		:	(bool)
-	backup		:	(bool)
-	backup_path	:	(string)
-	connectivity	:	(required, list[interface])
-		interface	:	(string, string int)
+    cpu         :   (required, list[string])
+	ram         :   (required, int)
+    hdd         :   (required, list[(description: string,
+                                     size:        int)])
+    connectivity:   (required, list[(name: string,
+                                     type: string,
+                                     rate: int)])
+    software    :   (required, list[(name:    string,
+                                     version: string)])
+    swPatches   :   (required, list[string])
+    firewall    :   (required, list[(name:  string,
+                                     state: string)])
+    remoteAccess:   (required, list[strng])
+    ports       :   (required, list[(protocol: string,
+                                     number:   string)])
+    processes   :   (required, list[(user: string,
+                                     pid:  string)])
+    seclog      :   (required, list[(settings: string,
+                                     name    : string)])
+    shadows     :   (list[(original: string,
+                           shadow  : string,
+                           id      : string)])
+    backup      :   (list[string]) 
 
 	# MOBILE CONNECTIVITY FIELDS
-
-	cpu		:	(required, list[string])
-	ram		:	(required, int)
-	hard_drives	:	(required, list[disk])
-		disk		:	(required, (string, int))
-
-	
 	
