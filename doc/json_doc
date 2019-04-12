@@ -7,12 +7,12 @@ output
     osName      :   (required, string)
 	osVersion	:	(required, string)
     osUpdates   :   (required, list[(id:  string,
-                                    date: date)])
-    ipAddr      :   (required, list[(caption:     string,
-                                     ip:          string,
-                                     gateway:     string,
-                                     mac:         string,
-                                     interfaceID: string)])
+                                     date: date)])
+    interfaces  :   (required, list[(caption: string,
+                                     ip:      string,
+                                     gateway: string,
+                                     mac:     string,
+                                     ifaceID: string)])
 	domain		:	(required, string)
 	protocols	:	(required, list[string])
 	users		:	(required, list[string])
@@ -22,7 +22,7 @@ output
 	ram         :   (required, int)
     hdd         :   (required, list[(description: string,
                                      size:        int)])
-    connectivity:   (required, list[(name: string,
+    adapters    :   (required, list[(name: string,
                                      type: string,
                                      rate: int)])
     software    :   (required, list[(name:    string,
@@ -30,7 +30,7 @@ output
     swPatches   :   (required, list[string])
     firewall    :   (required, list[(name:  string,
                                      state: string)])
-    remoteAccess:   (required, list[strng])
+    remote      :   (required, list[strng])
     ports       :   (required, list[(protocol: string,
                                      number:   string)])
     processes   :   (required, list[(user: string,

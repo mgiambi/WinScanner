@@ -1,0 +1,64 @@
+{
+    "DocumentNotes": [
+        {
+            "Audience": "Public",
+            "Ordinal": "1",
+            "Title": "Release Notes",
+            "Type": 1,
+            "Value": "<p>The October 27 out of band security release consists of security updates for Adobe Flash Player.</p>\n"
+        },
+        {
+            "Audience": "Public",
+            "Ordinal": "2",
+            "Title": "Legal Disclaimer",
+            "Type": 5,
+            "Value": "The information provided in the Microsoft Knowledge Base is provided \"as is\" without warranty of any kind. Microsoft disclaims all warranties, either express or implied, including the warranties of merchantability and fitness for a particular purpose. In no event shall Microsoft Corporation or its suppliers be liable for any damages whatsoever including direct, indirect, incidental, consequential, loss of business profits or special damages, even if Microsoft Corporation or its suppliers have been advised of the possibility of such damages. Some states do not allow the exclusion or limitation of liability for consequential or incidental damages so the foregoing limitation may not apply."
+        }
+    ],
+    "DocumentPublisher": {
+        "ContactDetails": {
+            "Value": "secure@microsoft.com"
+        },
+        "IssuingAuthority": {
+            "Value": "The Microsoft Security Response Center (MSRC) identifies, monitors, resolves, and responds to security incidents and Microsoft software security vulnerabilities. For more information, see http://www.microsoft.com/security/msrc."
+        },
+        "Type": 0
+    },
+    "DocumentTitle": {
+        "Value": "October 27, 2016 Security Update"
+    },
+    "DocumentTracking": {
+        "CurrentReleaseDate": "2016-10-27T07:00:00",
+        "Identification": {
+            "Alias": {
+                "Value": "2016-Oct"
+            },
+            "ID": {
+                "Value": "2016-Oct"
+            }
+        },
+        "InitialReleaseDate": "2016-10-27T07:00:00",
+        "RevisionHistory": [
+            {
+                "Date": "2016-10-27T07:00:00",
+                "Description": {
+                    "Value": "October 27, 2016 Security Update"
+                },
+                "Number": "1"
+            }
+        ],
+        "Status": 2,
+        "Version": "1.0"
+    },
+    "DocumentType": {
+        "Value": "Security Update"
+    },
+    "ProductTree": {
+        "Branch": [
+            {
+                "Name": "Microsoft",
+                "Type": 0
+            }
+        ]
+    }
+}

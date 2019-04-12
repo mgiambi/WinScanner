@@ -5,8 +5,12 @@ import argparse
 import urllib3
 import re
 import json
+import datetime
+import requests
 import wmi_client_wrapper as wmi
 from winrm.protocol import Protocol
+from os import listdir
+from os.path import isfile, join
 
 
 ###########################
@@ -29,15 +33,77 @@ HTTPS_PORT = "5986"
 PID_INDEX = 1
 USER_INDEX = 6
 
+api_url = "https://api.msrc.microsoft.com/"
+api_key = "15ec9ebc4fe9469784f10724bf752f82"
 
 #################
 ### FUNCTIONS ###
 #################
 
+### Print the progress bar
+def progressbar_update(current_val, end_val, file, bar_length = 30):
+    percent = float(current_val) / end_val
+    hashes = "#" * int(round(percent * bar_length))
+    spaces = "-" * (bar_length - len(hashes))
+    sys.stdout.write("\rProgress: [{0}] {1}% {2}".format(\
+                hashes + spaces, int(round(percent * 100)), file))
+    sys.stdout.flush()
+### End progress bar function
+
+### Download security update reports from microsoft database
+def download_monthly_update_files():
+
+    # Check if new reports are issued
+    url = "{}updates?api-version={}".format(api_url,\
+                str(datetime.datetime.now().year))
+    headers = {'api-key': api_key}
+    response = requests.get(url, headers=headers)
+
+    report_list = set()
+    if response.status_code == 200:
+        data = json.loads(response.content)
+        for element in data["value"]:
+            report_list.add(element["ID"])
+
+        reports = [f for f in listdir("data/reports") if \
+                        isfile(join("data/reports", f))]
+
+        # If a report is issued and not present in the local
+        # repository, download it
+        index = 0
+        print("Downloading missing reports...")
+        for element in report_list:
+            if element not in reports:
+                url = "{}cvrf/{}?api-version={}".format(api_url,\
+                        element, str(datetime.datetime.now().year))
+                headers = {'api-key': api_key, 'Accept': \
+                        'application/json'}
+                response = requests.get(url, headers = headers)
+
+                if response.status_code == 200:
+                    data = json.loads(response.content)
+                    with open("data/reports/" + element, "w") \
+                            as json_file:
+                        json.dump(data, json_file, sort_keys = True,\
+                            indent = 4)
+                    index += 1
+                    progressbar_update(index, len(report_list) -\
+                                        len(reports), element)
+                else:
+                    print("Error: the security update " + element +\
+                            " cannot be downloaded")
+                    exit()
+        print("\nThe security update repository is up-to-date.")
+    else:
+        print("Error: security update list cannot be downloaded.")
+        exit()
+### End security update reports function
+
 ### Helper function to print error messages
 def display_err(error_msg, print_error, command):
     if print_error and error_msg:
         print("\nCommand: " + command + "\n" + error_msg)
+### End error function
 
 ### Connect to the remote machine
 def auth(ip, user, password, secure, custom_port):
@@ -92,7 +158,7 @@ def shell_mode(session, shell, print_error, output_file):
                             result.std_out.decode() + "\n")
         except KeyboardInterrupt:
             exit()
-### End script function
+### End shell function
 
 ### Run .bat or .ps1 script read by a file
 def run_file(session, path, print_error, output_file):
@@ -194,7 +260,7 @@ def get_info(session, wmic, print_error, output_file):
         addr.ip = k["IPAddress"][0] + "/" + k["IPSubnet"][0]
         addr.gateway = k["DefaultIPGateway"]
         addr.mac = k["MACAddress"]
-        addr.interfaceID = k["SettingID"]
+        addr.ifaceID = k["SettingID"]
         ipAddr.append(addr)
     output.interfaces = ipAddr
 
@@ -268,7 +334,7 @@ def get_info(session, wmic, print_error, output_file):
         interface.type = k["AdapterType"]
         interface.rate = k["Speed"]
         conn.append(interface)
-    output.connectivity = conn
+    output.adapters = conn
 
     ##
     ## CMD COMMAND EXECUTION
@@ -371,7 +437,7 @@ def get_info(session, wmic, print_error, output_file):
     if result.std_out.decode():
         connectivity += "VNC"
 
-    output.remoteAccess = connectivity
+    output.remote = connectivity
 
     # COMMUNICATION PORT NUMBER
     result = session.run_cmd("netstat -aon | findstr /r " +\
@@ -448,7 +514,7 @@ def get_info(session, wmic, print_error, output_file):
             output_file += ".json"
         with open(output_file, "w") as outfile:
             outfile.write(json_obj)
-## End info gathering function
+### End info gathering function
 
 
 ####################
@@ -478,6 +544,8 @@ group.add_argument("-ps", action = "store_true",\
         help = "open a PS shell on target machine")
 group.add_argument("-f", metavar = "script file", type = str,\
         nargs = 1, help = "run the script in the specified file")
+parser.add_argument("-u", action = "store_true",\
+        help = "update local security update repository")
 parser.add_argument("-p", metavar = "port", type = str,\
         nargs = 1, help = "port to connect to " +\
         "(if different from default)")
@@ -511,5 +579,7 @@ elif args.ps:
     shell_mode(session, "PS", print_error, output_file)
 elif args.f is not None:
     run_file(session, args.f[0], print_error, output_file)
+elif args.u:
+    download_monthly_update_files()
 else:
     get_info(session, wmic, print_error, output_file)
